@@ -12,7 +12,13 @@ app.use(bodyParser.json());
 
 app.options("*", cors());
 // Habilitar CORS para todas las solicitudes
-app.use(cors());
+app.use(
+  cors({
+    origin: "*", // Permite todas las solicitudes (puedes restringir a ciertos dominios)
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: "Content-Type,Authorization",
+  })
+);
 
 let pedidos = []; // Aquí guardaremos los pedidos
 
