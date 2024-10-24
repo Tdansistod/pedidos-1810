@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pedidos</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 20px;
+        background: url("./src/wood.webp");
+      }
+      h1 {
+        color: white;
+        font-size: 2.5rem;
+        text-align: center;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 1rem;
+        background-color: white;
+      }
+      th,
+      td {
+        padding: 1rem;
+        text-align: left;
+        font-size: 1.2rem;
+      }
+      button {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 0.5rem;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Lista de Pedidos</h1>
+    <button id="activar-sonido">Activar notificaciones de sonido</button>
+    <table id="tabla-pedidos">
+      <thead>
+        <tr>
+          <th>A nombre de</th>
+          <th>Detalles</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      let sonidoHabilitado = false;
+      const sonidoNotificacion = new Audio("/sounds/notificacion.wav");
+
+      // Función para cargar los pedidos desde el servidor
+      async function cargarPedidos() {
+        const response = await fetch("/pedidos");
+        const pedidos = await response.json();
+
+        const tablaPedidos = document.querySelector("#tabla-pedidos tbody");
+        tablaPedidos.innerHTML = ""; // Limpiar la tabla
+
+        pedidos.forEach((pedido, index) => {
+          const fila = document.createElement("tr");
+
+          // Obtener la propiedad "Nombre" (si existe)
+          const Nombre = pedido.Nombre ? pedido.Nombre : `Pedido ${index + 1}`;
+
+          // Crear una lista de las propiedades restantes, excluyendo "Nombre"
+          const listaPropiedades = Object.entries(pedido)
+            .filter(([clave]) => clave !== "Nombre") // Excluir la propiedad "Nombre"
+            .map(([clave, valor]) => `<li>${clave}: ${valor}</li>`) // Formatear el resto de propiedades
+            .join(""); // Unir sin separadores, ya que <li> se manejará por separado
+
+          // Crear la fila de la tabla
+          fila.innerHTML = `
+                <td>${Nombre}</td>  <!-- Columna con la propiedad "Nombre" -->
+                <td>
+                    <ul>
+                        ${listaPropiedades}  <!-- Columna con el resto de propiedades como lista -->
+                    </ul>
+                </td>
+            `;
+
+          tablaPedidos.appendChild(fila);
+        });
+      }
+
+      // Función para habilitar el sonido después de la interacción del usuario
+      document
+        .getElementById("activar-sonido")
+        .addEventListener("click", () => {
+          sonidoHabilitado = true;
+          sonidoNotificacion
+            .play()
+            .then(() => {
+              console.log("Sonido habilitado.");
+            })
+            .catch((error) => {
+              console.log("Error al reproducir sonido:", error);
+            });
+          document.getElementById("activar-sonido").style.display = "none"; // Ocultar el botón después de habilitar el sonido
+        });
+
+      // Conectar con el servidor mediante WebSocket
+      const socket = io();
+
+      // Escuchar eventos de nuevos pedidos en tiempo real
+      socket.on("nuevoPedido", (pedido) => {
+        console.log("Nuevo pedido recibido:", pedido);
+
+        // Actualizar la lista de pedidos
+        cargarPedidos();
+
+        // Reproducir el sonido de notificación solo si está habilitado
+        if (sonidoHabilitado) {
+          sonidoNotificacion.play().catch((error) => {
+            console.log("Error al reproducir sonido: ", error);
+          });
+        }
+      });
+
+      // Cargar los pedidos al cargar la página
+      window.onload = function () {
+        cargarPedidos(); // Cargar los pedidos actuales
+      };
+    </script>
+  </body>
+</html>
