@@ -10,11 +10,19 @@ const io = socketIo(server); // Inicia Socket.io
 
 app.use(bodyParser.json());
 
-app.options("*", cors());
+app.options(
+  "/webhook",
+  cors({
+    origin: "https://1810.xn--wdiseoweb-p6a.com", // Permitir solo tu frontend
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: "Content-Type,Authorization",
+  })
+);
+
 // Habilitar CORS para todas las solicitudes
 app.use(
   cors({
-    origin: "*", // Permite todas las solicitudes (puedes restringir a ciertos dominios)
+    origin: "https://1810.xn--wdiseoweb-p6a.com", // Permitir solo tu frontend
     methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization",
   })
