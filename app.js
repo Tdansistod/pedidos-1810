@@ -10,35 +10,40 @@ const io = socketIo(server); // Inicia Socket.io
 
 app.use(bodyParser.json());
 
-app.options(
-  "/webhook",
+app.use(
   cors({
-    origin: "https://1810.xn--wdiseoweb-p6a.com", // Permitir solo tu frontend
+    origin: ["https://1810.xn--wdiseoweb-p6a.com", "http://localhost:3000"], // Permitir el frontend y localhost
     methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization",
   })
 );
 
-// Habilitar CORS para todas las solicitudes
-app.use(
-  cors({
-    origin: "https://1810.xn--wdiseoweb-p6a.com", // Permitir solo tu frontend
-    methods: "GET,POST,PUT,DELETE",
-    allowedHeaders: "Content-Type,Authorization",
-  })
-);
+// Manejar el webhook
+app.options("/webhook", (req, res) => {
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://1810.xn--wdiseoweb-p6a.com"
+  );
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  res.sendStatus(200);
+});
 
 let pedidos = []; // Aquí guardaremos los pedidos
 
 // Ruta para recibir los pedidos mediante webhooks (POST)
 app.post("/webhook", (req, res) => {
   const nuevoPedido = req.body;
-  pedidos.push(nuevoPedido); // Añadimos el pedido a la lista
+  pedidos.push(nuevoPedido);
   console.log("Nuevo pedido recibido:", nuevoPedido);
 
   // Emitimos el nuevo pedido a todos los clientes conectados
   io.emit("nuevoPedido", nuevoPedido);
 
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://1810.xn--wdiseoweb-p6a.com"
+  );
   res.status(200).send("Pedido recibido");
 });
 
